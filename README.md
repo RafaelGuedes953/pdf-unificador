@@ -170,7 +170,18 @@ Para fixar o Raspberry em uma versão, use a tag no lugar de `latest` (por exemp
 
 ## Proteção da branch main
 
-O script `scripts/protect-main.sh` configura a `main` para que nada entre sem pull request:
+A `main` é protegida por dois rulesets do GitHub (Settings → Rules → Rulesets), ambos ativos na branch padrão:
+
+| Ruleset | Quem se aplica | O que exige |
+|---|---|---|
+| `protectMain` | todos, sem bypass | PR obrigatório (0 aprovações), checks `build-test` e `docker-build` verdes com a branch atualizada, conversas resolvidas, histórico linear, sem force push e sem exclusão |
+| `requireApproval` | todos, exceto o dono em PRs | 1 aprovação, incluindo a revisão do dono do código (`CODEOWNERS`) |
+
+Assim, qualquer colaborador precisa da aprovação do dono, e o dono só precisa que os builds passem. Não há push direto na `main` para ninguém.
+
+### Alternativa: script
+
+Quem preferir a proteção de branch clássica, em vez de rulesets, pode usar o script `scripts/protect-main.sh`. Não use os dois ao mesmo tempo. Ele configura a `main` para que nada entre sem pull request:
 
 - pull request obrigatório (sem push direto);
 - checks `build-test` e `docker-build` obrigatórios, com a branch atualizada antes do merge;
