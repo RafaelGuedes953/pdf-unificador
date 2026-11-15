@@ -4,6 +4,8 @@
 
 # PDF Unificador
 
+**[Mira cómo funciona](https://rafaelguedes953.github.io/pdf-unificador/)** (se ejecuta en tu navegador, no se envía nada)
+
 Una aplicación web que une **imágenes y PDFs en un único PDF**. Subes los archivos, ves una miniatura de cada página, reordenas, giras, eliminas lo que no quieres y descargas el resultado. Está pensada para ejecutarse como contenedor en un servidor doméstico (Raspberry Pi con CasaOS) y usarse desde el navegador del móvil o del portátil dentro de la red local.
 
 ## Para qué sirve
