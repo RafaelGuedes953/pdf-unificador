@@ -2,6 +2,8 @@
 
 # PDF Unificador
 
+**[See how it works](https://rafaelguedes953.github.io/pdf-unificador/)** (it runs in your browser, nothing is uploaded)
+
 A web app that merges **images and PDFs into a single PDF**. You upload the files, see a thumbnail of every page, reorder, rotate, remove what you don't want and download the result. It is designed to run as a container on a home server (Raspberry Pi with CasaOS) and be used from the browser of your phone or laptop inside the local network.
 
 ## What it is for
