@@ -117,6 +117,20 @@ curl -o fusionne.pdf \
 - Les erreurs reviennent sous forme de JSON `{"error": "message"}` avec le statut HTTP approprié (400, 413, 415, 422 ou 429).
 - `GET /health` répond `{"status":"ok"}` et `GET /api/config` indique les limites actives.
 
+## Mode navigateur (sans serveur)
+
+La même interface peut aussi fonctionner sans le serveur. Quand elle est servie comme de simples fichiers statiques (par exemple sur GitHub Pages) et que `api/config` ne répond pas, elle passe d'elle-même en mode navigateur : le PDF est assemblé sur votre propre appareil avec pdf-lib, et aucun fichier n'est envoyé nulle part. Le conteneur continue de fonctionner exactement comme avant.
+
+Limites par rapport au conteneur :
+
+- **Mémoire de l'appareil.** La limite est la mémoire du navigateur et de l'appareil, pas celle du serveur. Les gros lots peuvent échouer sur des téléphones modestes, et la page affiche un message suggérant moins de fichiers ou des fichiers plus petits.
+- **Les grandes images sont réduites.** Les images de plus de 16 mégapixels qui doivent être ré-encodées (correction EXIF, PNG, WebP) sont réduites à 16 MP, ce qui donne encore plus de 300 ppp en A4. Les JPEG déjà dans la bonne orientation entrent dans le PDF intacts, quelle que soit leur taille.
+- **La page peut se figer un instant.** Le PDF est construit sur le thread principal, si bien que les gros lots peuvent bloquer l'écran jusqu'à la fin.
+- **Peu de tests sur les navigateurs pour l'instant.** Il n'a été validé que sur Chrome (ordinateur). Firefox, Safari et les navigateurs mobiles n'ont pas été testés.
+- **Un 404 sans gravité dans la console.** La console du navigateur affiche un 404 pour `api/config` ; cette sonde est la façon dont le mode est détecté.
+
+Les limites de fichiers, de taille et de pages sont les mêmes que dans le conteneur, et HEIC, GIF et TIFF ne sont toujours pas pris en charge.
+
 ## Développement local
 
 ```bash

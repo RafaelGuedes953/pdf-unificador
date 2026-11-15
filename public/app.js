@@ -1,6 +1,9 @@
-import * as pdfjsLib from '/vendor/pdfjs/build/pdf.min.mjs';
+import * as pdfjsLib from './vendor/pdfjs/build/pdf.min.mjs';
+import { MergeError, mergeInBrowser } from './merge-client.js';
 
-const PDFJS_BASE = '/vendor/pdfjs/';
+// Caminhos relativos ao app.js: funcionam na raiz do container e em subpastas (GitHub Pages).
+const PDFJS_BASE = new URL('./vendor/pdfjs/', import.meta.url).href;
+const PDFLIB_URL = new URL('./vendor/pdf-lib/pdf-lib.esm.min.js', import.meta.url).href;
 pdfjsLib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE}build/pdf.worker.min.mjs`;
 const PDF_OPTIONS = {
   cMapUrl: `${PDFJS_BASE}cmaps/`,
@@ -20,11 +23,18 @@ const els = {
   status: document.getElementById('status'),
   count: document.getElementById('count'),
   limits: document.getElementById('limits'),
+  modeNote: document.getElementById('mode-note'),
   generate: document.getElementById('generate'),
   clear: document.getElementById('clear'),
 };
 
 let limits = { maxFiles: 20, maxFileMb: 25, maxTotalMb: 100, maxPages: 300 };
+
+/**
+ * 'server': o PDF é montado pelo servidor (container). 'browser': não há servidor
+ * (por exemplo, no GitHub Pages) e o PDF é montado neste aparelho, sem enviar nada.
+ */
+let mode = 'server';
 
 let nextId = 1;
 /** Arquivos enviados pelo usuário que ainda têm páginas na lista. */
@@ -388,6 +398,34 @@ window.addEventListener('drop', async (event) => {
 
 // ---------- geração do PDF ----------
 
+/** Modo servidor: envia os arquivos e o plano e recebe o PDF pronto. */
+async function mergeOnServer(list, plan) {
+  const form = new FormData();
+  for (const file of list) form.append('files', file, file.name);
+  form.append('plan', JSON.stringify(plan));
+
+  const response = await fetch('api/merge', { method: 'POST', body: form });
+  if (!response.ok) {
+    let message = `Falha ao gerar o PDF (erro ${response.status}).`;
+    try {
+      message = (await response.json()).error || message;
+    } catch {
+      // resposta sem JSON: mantém a mensagem padrão
+    }
+    throw new Error(message);
+  }
+  return response.blob();
+}
+
+/** Modo navegador: monta o PDF neste aparelho, sem enviar nada para lugar nenhum. */
+async function mergeLocally(list, plan) {
+  const PDFLib = await import(PDFLIB_URL);
+  const inputs = [];
+  for (const file of list) inputs.push({ name: file.name, data: new Uint8Array(await file.arrayBuffer()) });
+  const bytes = await mergeInBrowser(inputs, plan.items, { PDFLib });
+  return new Blob([bytes], { type: 'application/pdf' });
+}
+
 async function generate() {
   if (busy || items.size === 0) return;
   busy = true;
@@ -397,38 +435,23 @@ async function generate() {
   try {
     const ordered = orderedCards().map((card) => items.get(Number(card.dataset.id)));
 
-    // Só envia os arquivos que ainda têm páginas, na ordem em que aparecem.
+    // Só usa os arquivos que ainda têm páginas, na ordem em que aparecem.
     const fileIndex = new Map();
-    const form = new FormData();
+    const list = [];
     for (const item of ordered) {
       if (fileIndex.has(item.fileId)) continue;
       fileIndex.set(item.fileId, fileIndex.size);
-      const { file } = files.get(item.fileId);
-      form.append('files', file, file.name);
+      list.push(files.get(item.fileId).file);
     }
-    form.append(
-      'plan',
-      JSON.stringify({
-        items: ordered.map((item) => ({
-          file: fileIndex.get(item.fileId),
-          page: item.page,
-          rotation: item.rotation,
-        })),
-      }),
-    );
+    const plan = {
+      items: ordered.map((item) => ({
+        file: fileIndex.get(item.fileId),
+        page: item.page,
+        rotation: item.rotation,
+      })),
+    };
 
-    const response = await fetch('/api/merge', { method: 'POST', body: form });
-    if (!response.ok) {
-      let message = `Falha ao gerar o PDF (erro ${response.status}).`;
-      try {
-        message = (await response.json()).error || message;
-      } catch {
-        // resposta sem JSON: mantém a mensagem padrão
-      }
-      throw new Error(message);
-    }
-
-    const blob = await response.blob();
+    const blob = mode === 'browser' ? await mergeLocally(list, plan) : await mergeOnServer(list, plan);
     if (resultUrl) URL.revokeObjectURL(resultUrl);
     resultUrl = URL.createObjectURL(blob);
 
@@ -444,8 +467,14 @@ async function generate() {
       text: 'Abrir',
     });
   } catch (error) {
-    const offline = error instanceof TypeError;
-    showStatus(offline ? 'Não foi possível falar com o servidor. Verifique a conexão.' : error.message, 'error');
+    let message = error.message;
+    if (mode === 'server' && error instanceof TypeError) {
+      message = 'Não foi possível falar com o servidor. Verifique a conexão.';
+    } else if (mode === 'browser' && !(error instanceof MergeError)) {
+      // Falha inesperada (em geral, falta de memória do aparelho ou erro ao carregar a biblioteca).
+      message = 'Não foi possível gerar o PDF neste aparelho. Tente com menos arquivos ou arquivos menores.';
+    }
+    showStatus(message, 'error');
   } finally {
     busy = false;
     updateControls();
@@ -459,11 +488,14 @@ els.clear.addEventListener('click', clearAll);
 
 async function loadLimits() {
   try {
-    const response = await fetch('/api/config');
-    if (response.ok) limits = { ...limits, ...(await response.json()) };
+    const response = await fetch('api/config');
+    const config = response.ok ? await response.json().catch(() => null) : null;
+    if (config && Number.isFinite(config.maxFiles)) limits = { ...limits, ...config };
+    else mode = 'browser'; // o endereço respondeu, mas não é o nosso servidor (ex.: GitHub Pages)
   } catch {
-    // mantém os limites padrão
+    // sem resposta de rede: mantém o modo servidor e os limites padrão
   }
+  els.modeNote.hidden = mode !== 'browser';
   els.limits.textContent = `Até ${limits.maxFiles} arquivos, ${limits.maxFileMb} MB cada (${limits.maxTotalMb} MB no total) e ${limits.maxPages} páginas.`;
 }
 

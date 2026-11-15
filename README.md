@@ -115,6 +115,20 @@ curl -o merged.pdf \
 - Errors come back as JSON `{"error": "message"}` with the appropriate HTTP status (400, 413, 415, 422 or 429).
 - `GET /health` answers `{"status":"ok"}` and `GET /api/config` reports the active limits.
 
+## Browser mode (no server)
+
+The same interface can also run without the server. When it is served as plain static files (for example on GitHub Pages) and `api/config` does not answer, it switches to browser mode by itself: the PDF is assembled on your own device with pdf-lib, and no file is sent anywhere. The container keeps working exactly as before.
+
+Limitations compared with the container:
+
+- **Device memory.** The limit is the memory of the browser and the device, not the server's. Large batches can fail on simple phones, and the page shows a message suggesting fewer or smaller files.
+- **Large images are reduced.** Images above 16 megapixels that need re-encoding (EXIF correction, PNG, WebP) are scaled down to 16 MP, which still gives more than 300 dpi on A4. JPEGs already in the correct orientation go into the PDF untouched, at any size.
+- **The page can freeze for a moment.** The PDF is built on the main thread, so large batches may block the screen until they finish.
+- **Little browser testing so far.** It was only validated on Chrome (desktop). Firefox, Safari and mobile browsers are untested.
+- **A harmless 404 in the console.** The browser console shows a 404 for `api/config`; that probe is how the mode is detected.
+
+The limits on files, size and pages are the same as in the container, and HEIC, GIF and TIFF are still not supported.
+
 ## Local development
 
 ```bash

@@ -117,6 +117,20 @@ curl -o unificado.pdf \
 - Erros voltam como JSON `{"error": "mensagem"}` com o status HTTP adequado (400, 413, 415, 422 ou 429).
 - `GET /health` responde `{"status":"ok"}` e `GET /api/config` informa os limites ativos.
 
+## Modo no navegador (sem servidor)
+
+A mesma interface também roda sem o servidor. Quando ela é servida como arquivos estáticos (por exemplo, no GitHub Pages) e `api/config` não responde, ela passa sozinha para o modo no navegador: o PDF é montado no seu próprio aparelho com o pdf-lib, e nenhum arquivo é enviado para lugar nenhum. O container continua funcionando exatamente como antes.
+
+Limitações em relação ao container:
+
+- **Memória do aparelho.** O limite é a memória do navegador e do aparelho, não a do servidor. Lotes grandes podem falhar em celulares simples, e a página mostra uma mensagem sugerindo menos arquivos ou arquivos menores.
+- **Imagens grandes são reduzidas.** Imagens acima de 16 megapixels que precisam ser recodificadas (correção de EXIF, PNG, WebP) são reduzidas para 16 MP, o que ainda dá mais de 300 dpi no A4. JPEGs que já estão na orientação correta entram no PDF intactos, em qualquer tamanho.
+- **A página pode travar por um instante.** O PDF é montado na thread principal, então lotes grandes podem bloquear a tela até terminar.
+- **Pouco teste em navegadores até agora.** Só foi validado no Chrome (computador). Firefox, Safari e navegadores de celular não foram testados.
+- **Um 404 inofensivo no console.** O console do navegador mostra um 404 para `api/config`; essa sondagem é como o modo é detectado.
+
+Os limites de arquivos, tamanho e páginas são os mesmos do container, e HEIC, GIF e TIFF continuam sem suporte.
+
 ## Desenvolvimento local
 
 ```bash
