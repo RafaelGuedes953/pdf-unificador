@@ -1,0 +1,34 @@
+{
+  "name": "pdf-unificador",
+  "version": "1.0.0",
+  "description": "Unifica imagens e PDFs em um unico PDF, com interface web simples para reordenar e girar paginas.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "vendor": "node tools/copy-vendor.mjs",
+    "predev": "npm run vendor",
+    "dev": "tsx watch src/server.ts",
+    "build": "npm run vendor && tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "npm run vendor",
+    "test": "node --import tsx --test --test-reporter=spec test/*.test.ts"
+  },
+  "dependencies": {
+    "@fastify/multipart": "^10.1.8",
+    "@fastify/static": "^10.1.11",
+    "fastify": "^5.12.8",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "pdfjs-dist": "^6.5.438",
+    "sortablejs": "^1.15.7",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

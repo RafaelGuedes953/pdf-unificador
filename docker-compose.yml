@@ -1,0 +1,33 @@
+# Uso genérico (qualquer host com Docker). Para o CasaOS, veja casaos/docker-compose.yml.
+#
+#   docker compose up -d --build     constrói a imagem aqui e sobe
+#   docker compose pull && docker compose up -d     usa a imagem publicada (defina IMAGE no .env)
+name: pdf-unificador
+
+services:
+  pdf-unificador:
+    image: ${IMAGE:-pdf-unificador:local}
+    build: .
+    container_name: pdf-unificador
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8085}:3000"
+    environment:
+      MAX_FILES: ${MAX_FILES:-20}
+      MAX_FILE_MB: ${MAX_FILE_MB:-25}
+      MAX_TOTAL_MB: ${MAX_TOTAL_MB:-100}
+      MAX_PAGES: ${MAX_PAGES:-300}
+      MAX_IMAGE_MEGAPIXELS: ${MAX_IMAGE_MEGAPIXELS:-100}
+      MAX_CONCURRENT_JOBS: ${MAX_CONCURRENT_JOBS:-2}
+      SHARP_CONCURRENCY: ${SHARP_CONCURRENCY:-2}
+    # Nada é gravado em disco: os arquivos são processados em memória.
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: ${MEM_LIMIT:-1g}
+    pids_limit: 128

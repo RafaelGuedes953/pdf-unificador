@@ -1,0 +1,75 @@
+# Compose para importar no CasaOS (App Store > Instalar um app personalizado > Importar).
+# A porta publicada (8085) pode ser alterada na tela de instalação do CasaOS.
+name: pdf-unificador
+
+services:
+  pdf-unificador:
+    image: ghcr.io/rafaelguedes953/pdf-unificador:latest
+    container_name: pdf-unificador
+    init: true
+    restart: unless-stopped
+    ports:
+      - target: 3000
+        published: "8085"
+        protocol: tcp
+    environment:
+      - MAX_FILES=20
+      - MAX_FILE_MB=25
+      - MAX_TOTAL_MB=100
+      - MAX_PAGES=300
+      - MAX_CONCURRENT_JOBS=2
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1g
+    pids_limit: 128
+    x-casaos:
+      envs:
+        - container: MAX_FILES
+          description:
+            en_us: Maximum number of files per job
+            pt_br: Máximo de arquivos por unificação
+        - container: MAX_FILE_MB
+          description:
+            en_us: Maximum size of each file, in MB
+            pt_br: Tamanho máximo de cada arquivo, em MB
+        - container: MAX_TOTAL_MB
+          description:
+            en_us: Maximum combined size of the files, in MB
+            pt_br: Tamanho máximo somado dos arquivos, em MB
+        - container: MAX_PAGES
+          description:
+            en_us: Maximum pages in the final PDF
+            pt_br: Máximo de páginas no PDF final
+        - container: MAX_CONCURRENT_JOBS
+          description:
+            en_us: Simultaneous merges allowed
+            pt_br: Unificações simultâneas permitidas
+      ports:
+        - container: "3000"
+          description:
+            en_us: Web interface port
+            pt_br: Porta da interface web
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: pdf-unificador
+  author: pdf-unificador
+  category: Utilities
+  index: /
+  port_map: "8085"
+  title:
+    en_us: PDF Unificador
+    pt_br: PDF Unificador
+  tagline:
+    en_us: Merge images and PDFs into a single PDF
+    pt_br: Una imagens e PDFs em um único PDF
+  description:
+    en_us: Web app to merge images and PDFs into one PDF, reordering and rotating pages before generating it.
+    pt_br: Aplicativo web para unir imagens e PDFs em um único PDF, reordenando e girando as páginas antes de gerar.
