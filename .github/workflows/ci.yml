@@ -64,6 +64,8 @@ jobs:
           done
           curl -fsS -o /dev/null http://localhost:3000/
           curl -fsS -o /dev/null http://localhost:3000/vendor/pdfjs/build/pdf.min.mjs
+          curl -fsS -o /dev/null http://localhost:3000/vendor/pdf-lib/pdf-lib.esm.min.js
+          curl -fsS -o /dev/null http://localhost:3000/merge-client.js
           docker rm -f smoke
 
       - name: Build arm64 (somente valida)

@@ -119,7 +119,7 @@ curl -o unido.pdf \
 
 ## Modo en el navegador (sin servidor)
 
-La misma interfaz también puede ejecutarse sin el servidor. Cuando se sirve como archivos estáticos (por ejemplo, en GitHub Pages) y `api/config` no responde, pasa sola al modo en el navegador: el PDF se monta en tu propio dispositivo con pdf-lib y ningún archivo se envía a ninguna parte. El contenedor sigue funcionando exactamente igual que antes.
+La misma interfaz también puede ejecutarse sin el servidor. Cuando se sirve como archivos estáticos (por ejemplo, en GitHub Pages) y `api/config` no responde, pasa sola al modo en el navegador: el PDF se monta en tu propio dispositivo con pdf-lib y ningún archivo se envía a ninguna parte. El contenedor sigue funcionando exactamente igual que antes. Hay una versión alojada en https://rafaelguedes953.github.io/pdf-unificador/, publicada por el CI en GitHub Pages.
 
 Limitaciones respecto al contenedor:
 
@@ -163,12 +163,13 @@ docs/       READMEs traducidos
 
 ## CI/CD
 
-Dos workflows en `.github/workflows/`:
+Tres workflows en `.github/workflows/`:
 
 - **`ci.yml`** se ejecuta en cada pull request y en cada push a `main`:
   - `build-test`: instala dependencias, comprueba los tipos, ejecuta las pruebas y compila.
   - `docker-build`: construye la imagen para `amd64` y `arm64`, arranca el contenedor y comprueba `/health`, la interfaz y las bibliotecas del navegador. La compilación `arm64` se ejecuta emulada, por lo que es el paso más lento.
 - **`publish.yml`** se ejecuta cuando algo entra en `main` (o cuando se crea una etiqueta `vX.Y.Z`) y publica la imagen multiarquitectura en el GitHub Container Registry, en `ghcr.io/<usuario>/pdf-unificador`, con las etiquetas `latest`, el hash del commit y, en las etiquetas de versión, el número de versión (`1.0.0` y `1.0`). En las etiquetas de versión también comprueba que la etiqueta coincida con la `version` del `package.json` y, tras publicar la imagen, crea la Release en GitHub con notas generadas automáticamente.
+- **`pages.yml`** se ejecuta cuando cambian los archivos de la interfaz en `main` (o manualmente) y publica el sitio en GitHub Pages, donde funciona en [modo en el navegador](#modo-en-el-navegador-sin-servidor). Antes de publicar, comprueba que los archivos esenciales estén en el sitio. Necesita Settings → Pages → Source en **GitHub Actions**, una sola vez.
 
 Dependabot (`.github/dependabot.yml`) abre pull requests semanales para actualizar las dependencias npm, las GitHub Actions y la imagen base de Docker.
 
@@ -242,7 +243,8 @@ Otras opciones: `ENFORCE_ADMINS=false`, `CHECKS`, `BRANCH` y `DRY_RUN=1` (muestr
 
 4. Espera a que termine el workflow **Publicar imagem** (pestaña Actions). Crea el paquete en GHCR.
 5. Aplica la protección de `main`, con rulesets o con `bash scripts/protect-main.sh` (consulta [Protección de la rama main](#protección-de-la-rama-main)). A partir de ahí, todo el trabajo entra por rama y pull request.
-6. Instala en el servidor con una de las opciones de [Instalación](#instalación).
+6. Opcional: para publicar el sitio del modo en el navegador, activa GitHub Pages (Settings → Pages → Source: **GitHub Actions**); el workflow **Publicar site** hace el resto.
+7. Instala en el servidor con una de las opciones de [Instalación](#instalación).
 
 ## Seguridad y limitaciones
 

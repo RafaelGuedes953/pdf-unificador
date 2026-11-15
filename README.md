@@ -117,7 +117,7 @@ curl -o merged.pdf \
 
 ## Browser mode (no server)
 
-The same interface can also run without the server. When it is served as plain static files (for example on GitHub Pages) and `api/config` does not answer, it switches to browser mode by itself: the PDF is assembled on your own device with pdf-lib, and no file is sent anywhere. The container keeps working exactly as before.
+The same interface can also run without the server. When it is served as plain static files (for example on GitHub Pages) and `api/config` does not answer, it switches to browser mode by itself: the PDF is assembled on your own device with pdf-lib, and no file is sent anywhere. The container keeps working exactly as before. A hosted version is available at https://rafaelguedes953.github.io/pdf-unificador/, published by the CI on GitHub Pages.
 
 Limitations compared with the container:
 
@@ -161,12 +161,13 @@ docs/       translated READMEs
 
 ## CI/CD
 
-Two workflows in `.github/workflows/`:
+Three workflows in `.github/workflows/`:
 
 - **`ci.yml`** runs on every pull request and every push to `main`:
   - `build-test`: installs dependencies, checks types, runs the tests and builds.
   - `docker-build`: builds the image for `amd64` and `arm64`, starts the container and checks `/health`, the interface and the browser libraries. The `arm64` build runs emulated, so it is the slowest step.
 - **`publish.yml`** runs when something lands on `main` (or when a `vX.Y.Z` tag is created) and publishes the multi-architecture image to the GitHub Container Registry, at `ghcr.io/<user>/pdf-unificador`, with the tags `latest`, the commit hash and, on version tags, the version number (`1.0.0` and `1.0`). On version tags it also checks that the tag matches the `version` in `package.json` and, after publishing the image, creates the GitHub Release with automatically generated notes.
+- **`pages.yml`** runs when the interface files change on `main` (or manually) and publishes the site to GitHub Pages, where it runs in [browser mode](#browser-mode-no-server). It checks that the essential files are in the site before publishing. It needs Settings → Pages → Source set to **GitHub Actions**, once.
 
 Dependabot (`.github/dependabot.yml`) opens weekly pull requests to update npm dependencies, GitHub Actions and the Docker base image.
 
@@ -240,7 +241,8 @@ Other options: `ENFORCE_ADMINS=false`, `CHECKS`, `BRANCH` and `DRY_RUN=1` (shows
 
 4. Wait for the **Publicar imagem** workflow to finish (Actions tab). It creates the package on GHCR.
 5. Apply the `main` protection, with rulesets or with `bash scripts/protect-main.sh` (see [Main branch protection](#main-branch-protection)). From then on, all work goes in through a branch and a pull request.
-6. Install on the server with one of the [Installation](#installation) options.
+6. Optional: to publish the browser-mode site, enable GitHub Pages (Settings → Pages → Source: **GitHub Actions**); the **Publicar site** workflow does the rest.
+7. Install on the server with one of the [Installation](#installation) options.
 
 ## Security and limitations
 

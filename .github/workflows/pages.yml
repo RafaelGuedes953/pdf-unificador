@@ -1,0 +1,78 @@
+name: Publicar site
+
+# Publica a interface no GitHub Pages, em https://<usuario>.github.io/pdf-unificador/.
+# Lá não há servidor: a interface detecta isso e monta o PDF no próprio navegador (modo navegador).
+#
+# Requisito, uma vez só: Settings > Pages > Build and deployment > Source = "GitHub Actions".
+on:
+  push:
+    branches: [main]
+    paths:
+      - "public/**"
+      - "tools/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Uma publicação por vez, sem cancelar a que está em andamento.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Só precisamos copiar as bibliotecas do navegador para vendor/, então scripts de instalação ficam de fora.
+      - run: npm ci --ignore-scripts
+      - run: npm run vendor
+
+      - name: Montar o site
+        run: |
+          mkdir _site
+          cp -r public/. _site/
+          cp -r vendor _site/vendor
+          touch _site/.nojekyll
+
+      # Falha cedo se algo essencial não foi copiado, em vez de publicar um site quebrado.
+      - name: Conferir arquivos essenciais
+        run: |
+          for f in index.html app.js merge-client.js style.css \
+                   vendor/pdf-lib/pdf-lib.esm.min.js \
+                   vendor/pdfjs/build/pdf.min.mjs \
+                   vendor/pdfjs/build/pdf.worker.min.mjs \
+                   vendor/sortable/Sortable.min.js; do
+            test -s "_site/$f" || { echo "Faltando no site: $f" >&2; exit 1; }
+          done
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
