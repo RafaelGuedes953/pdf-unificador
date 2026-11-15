@@ -20,6 +20,9 @@ const copies = [
   ['pdfjs-dist/LICENSE', 'pdfjs/LICENSE'],
   ['sortablejs/Sortable.min.js', 'sortable/Sortable.min.js'],
   ['sortablejs/LICENSE', 'sortable/LICENSE'],
+  // pdf-lib em ESM autocontido, usado pelo modo sem servidor (montagem do PDF no navegador).
+  ['pdf-lib/dist/pdf-lib.esm.min.js', 'pdf-lib/pdf-lib.esm.min.js'],
+  ['pdf-lib/LICENSE.md', 'pdf-lib/LICENSE.md'],
 ];
 
 rmSync(target, { recursive: true, force: true });

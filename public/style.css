@@ -66,6 +66,16 @@ main {
   font-size: 0.875rem;
 }
 
+.mode-note {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 0.875rem;
+}
+
 .picker {
   display: flex;
   flex-wrap: wrap;
